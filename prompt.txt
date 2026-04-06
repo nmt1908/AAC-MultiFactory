@@ -1,0 +1,42 @@
+
+
+Thời gian báo cáo / Report Time: 2026-04-03 08:43:45
+Tổng số camera báo lỗi / Total alerts: 26
+
+DANH SÁCH CAMERA LỖI / LIST OF UNSTABLE CAMERAS:
+--------------------------------------------------
+  - CCTV_11  (IP: 10.12.3.196)
+  - CCTV_4  (IP: 10.12.3.246)
+  - CCTV_28  (IP: 10.12.0.249)
+  - CCTV_27  (IP: 10.12.0.250)
+  - CCTV_26  (IP: 10.12.0.185)
+  - CCTV_26  (IP: 10.12.0.185)
+  - CCTV_27  (IP: 10.12.0.250)
+  - CCTV_28  (IP: 10.12.0.249)
+  - CCTV_30  (IP: 10.12.3.135)
+  - CCTV_29  (IP: 10.12.3.134)
+  - CCTV_21  (IP: 10.12.3.230)
+  - CCTV_23  (IP: 10.12.3.232)
+  - CCTV_32  (IP: 10.12.3.91)
+  - CCTV_31  (IP: 10.12.3.90)
+  - CCTV_34  (IP: 10.12.3.154)
+  - CCTV_127  (IP: 10.12.4.143)
+  - CCTV_160  (IP: 10.12.4.150)
+  - CCTV_30  (IP: 10.12.3.135)
+  - CCTV_29  (IP: 10.12.3.134)
+  - CCTV_21  (IP: 10.12.3.230)
+  - CCTV_23  (IP: 10.12.3.232)
+  - CCTV_32  (IP: 10.12.3.91)
+  - CCTV_31  (IP: 10.12.3.90)
+  - CCTV_34  (IP: 10.12.3.154)
+  - CCTV_127  (IP: 10.12.4.143)
+  - CCTV_160  (IP: 10.12.4.150)
+--------------------------------------------------
+
+CHI TIẾT LỖI / TECHNICAL DETAILS:
+Lỗi / Error: Conversion failed!
+Nhóm camera / Group: CCTV_11, CCTV_4, CCTV_28, CCTV_27, CCTV_26, CCTV_26, CCTV_27, CCTV_28, CCTV_30, CCTV_29, CCTV_21, CCTV_23, CCTV_32, CCTV_31, CCTV_34, CCTV_127, CCTV_160, CCTV_30, CCTV_29, CCTV_21, CCTV_23, CCTV_32, CCTV_31, CCTV_34, CCTV_127, CCTV_160
+Tình trạng / Status: WARNING
+..............................
+
+Đã mute cctv 23 và 32 sao vẫn có mail báo 2 camera này vậy??

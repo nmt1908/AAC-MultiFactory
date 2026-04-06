@@ -1,0 +1,41 @@
+# HƯỚNG DẪN SỬ DỤNG HỆ THỐNG ĐA NHÀ MÁY (MULTI-FACTORY SYSTEM)
+
+Hệ thống hiện tại đã hỗ trợ cấu hình theo từng nhà máy dựa trên biến môi trường (Environment Variables).
+
+## 1. Cách chạy ứng dụng cho từng nhà máy
+
+Sử dụng các lệnh sau trong terminal:
+
+- Nhà máy VG:
+  `npm run dev:vg`
+- Nhà máy CH:
+  `npm run dev:ch`
+
+Để Build sản phẩm:
+- `npm run build:vg`
+- `npm run build:ch`
+
+## 2. Cách thêm nhà máy mới
+
+Bước 1: Mở file `src/config/factoryConfig.js`
+Bước 2: Thêm một object cấu hình mới vào biến `configs`. Ví dụ:
+```javascript
+  new_factory: {
+    name: 'Tên Nhà máy Mới',
+    apiBase: 'http://link-api-cua-nha-may-moi.com/api/cctv',
+    sensorApiBase: 'http://link-api-sensor.com/getSensorList',
+    storageBase: 'http://link-api-storage.com/api/storage/app/cctv/',
+    mapImage: '/đường/dẫn/đến/ảnh/map.png',
+  }
+```
+Bước 3: Tạo file `.env.new_factory` với nội dung:
+`VITE_FACTORY_ID=new_factory`
+
+Bước 4: Thêm script vào `package.json`:
+`"dev:new_factory": "vite --mode new_factory"`
+
+## 3. Cấu trúc file cấu hình
+- `apiBase`: URL gốc của API CCTV (Login, Logout, Heartbeat, Layout).
+- `sensorApiBase`: URL lấy danh sách sensor.
+- `storageBase`: URL gốc chứa ảnh cảnh báo (Warning images).
+- `mapImage`: Ảnh sơ đồ mặt bằng của nhà máy đó.

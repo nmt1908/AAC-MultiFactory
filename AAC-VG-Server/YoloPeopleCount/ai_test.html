@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CCTV AI Test Detect</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; background: #f3f4f6; color: #111827; }
+    .layout { display: flex; height: 100vh; }
+    .sidebar {
+      width: 260px;
+      border-right: 1px solid #e5e7eb;
+      background: #ffffff;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+      gap: 10px;
+      min-width: 0;
+    }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    label { font-size: 13px; display: block; margin-bottom: 4px; color: #4b5563; }
+    select, input[type="file"] {
+      width: 100%;
+      font-size: 13px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      outline: none;
+    }
+    select:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37,99,235,0.2);
+    }
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .btn-primary { background: #111827; color: #f9fafb; }
+    .btn-primary:hover { background: #1f2937; }
+    .status-line { font-size: 11px; color: #6b7280; }
+    .status-error { color: #b91c1c; }
+    .status-success { color: #15803d; }
+    .preview-wrapper {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+      flex: 1;
+      min-height: 0;
+    }
+    .image-preview {
+      flex: 0 0 55%;
+      background: #020617;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+    }
+    .img-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #previewImg {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+    }
+    #visOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+    .json-box {
+      flex: 1;
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 11px;
+      background: #111827;
+      color: #e5e7eb;
+      padding: 8px;
+      border-radius: 8px;
+      overflow: auto;
+      white-space: pre;
+    }
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+    .small { font-size: 11px; color: #4b5563; }
+
+    /* AI status pills */
+    .ai-status-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+      margin-bottom: 8px;
+    }
+
+    .ai-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 16px;
+      background: #e5e7eb;
+      color: #9ca3af;
+    }
+
+    .ai-pill .ai-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .ai-pill .ai-value {
+      font-weight: 600;
+    }
+
+    .ai-pill.disabled {
+      background: #e5e7eb;
+      color: #9ca3af;
+    }
+
+    .ai-pill.people-active {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .ai-pill.fire-active {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .ai-pill.climb-active {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .ai-pill.crowd-active {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <h1>CCTV AI Test</h1>
+
+    <div>
+      <label for="cameraSelect">Camera (with AI config)</label>
+      <select id="cameraSelect">
+        <option value="">-- Select camera --</option>
+      </select>
+    </div>
+
+    <div>
+      <div class="section-title">Test image</div>
+      <input type="file" id="fileInput" accept="image/*">
+      <p class="small">Select any image (snapshot from camera or a test image).</p>
+    </div>
+
+    <div>
+      <button class="btn btn-primary" id="btnDetect">▶ Run detect</button>
+    </div>
+
+    <div class="section-title">AI CONFIG INFO</div>
+
+    <!-- Status pills (people count + fire + climb + crowd) -->
+    <div class="ai-status-container">
+      <div class="ai-pill disabled" id="pillPeople">
+        <span class="ai-icon">👥</span>
+        <span class="ai-label">People</span>
+        <span class="ai-value" id="peopleCount">-</span>
+      </div>
+      <div class="ai-pill disabled" id="pillCrowd">
+        <span class="ai-icon">🚨</span>
+        <span class="ai-label">Crowd</span>
+        <span class="ai-value" id="crowdStatusText">OFF</span>
+      </div>
+      <div class="ai-pill disabled" id="pillFire">
+        <span class="ai-icon">🔥</span>
+        <span class="ai-label">Fire</span>
+        <span class="ai-value" id="fireStatusText">OFF</span>
+      </div>
+      <div class="ai-pill disabled" id="pillClimb">
+        <span class="ai-icon">🧗</span>
+        <span class="ai-label">Climb</span>
+        <span class="ai-value" id="climbStatusText">OFF</span>
+      </div>
+    </div>
+
+    <pre id="configInfo" class="json-box" style="max-height:220px;"></pre>
+
+  </aside>
+
+  <main class="content">
+    <div class="status-line" id="statusLine"></div>
+
+    <div class="preview-wrapper">
+      <div class="image-preview">
+        <div class="img-wrapper">
+          <img id="previewImg" src="" alt="Preview">
+          <canvas id="visOverlay"></canvas>
+        </div>
+      </div>
+      <div class="json-box" id="resultJson">{}</div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const SERVER_BASE = "http://10.13.34.180:8001";
+
+  const API_BASE   = SERVER_BASE + "/api/cctv";
+  const API_LIST   = API_BASE + "/ai/cameras";
+  const API_DETECT = API_BASE + "/test/detect";
+
+  const cameraSelect = document.getElementById("cameraSelect");
+  const fileInput = document.getElementById("fileInput");
+  const btnDetect = document.getElementById("btnDetect");
+  const previewImg = document.getElementById("previewImg");
+  const overlay = document.getElementById("visOverlay");
+  const statusLine = document.getElementById("statusLine");
+  const resultJsonEl = document.getElementById("resultJson");
+  const configInfoEl = document.getElementById("configInfo");
+
+  const pillPeople = document.getElementById("pillPeople");
+  const pillCrowd = document.getElementById("pillCrowd");
+  const pillFire = document.getElementById("pillFire");
+  const pillClimb = document.getElementById("pillClimb");
+
+  const peopleCountEl = document.getElementById("peopleCount");
+  const crowdStatusTextEl = document.getElementById("crowdStatusText");
+  const fireStatusTextEl = document.getElementById("fireStatusText");
+  const climbStatusTextEl = document.getElementById("climbStatusText");
+
+  const ctx = overlay.getContext("2d");
+
+  let cameras = [];
+  let selectedCamera = null;
+  let lastDetectData = null;
+
+  function setStatus(text, type = "info") {
+    statusLine.textContent = text || "";
+    statusLine.className = "status-line";
+    if (type === "error") statusLine.classList.add("status-error");
+    if (type === "success") statusLine.classList.add("status-success");
+  }
+
+  function pretty(obj) {
+    try {
+      return JSON.stringify(obj, null, 2);
+    } catch (e) {
+      return String(obj);
+    }
+  }
+
+  async function loadCameras() {
+    try {
+      setStatus("Loading cameras...");
+      const res = await fetch(API_LIST);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if (data.ret_code !== 0 || !Array.isArray(data.data)) {
+        throw new Error("Invalid response");
+      }
+      cameras = data.data;
+      cameraSelect.innerHTML = '<option value="">-- Select camera --</option>';
+      for (const cam of cameras) {
+        const opt = document.createElement("option");
+        opt.value = cam.code;
+        const aiFlag = cam.ai_config ? " [AI]" : "";
+        opt.textContent = cam.code + (cam.ip ? " (" + cam.ip + ")" : "") + aiFlag;
+        cameraSelect.appendChild(opt);
+      }
+      setStatus("Loaded " + cameras.length + " cameras.");
+    } catch (err) {
+      console.error(err);
+      setStatus("Failed to load cameras: " + err.message, "error");
+    }
+  }
+
+  function refreshConfigInfo() {
+    if (!selectedCamera || !selectedCamera.ai_config) {
+      configInfoEl.textContent = "// no ai_config for this camera";
+      return;
+    }
+    const cfg = selectedCamera.ai_config;
+    const actions = cfg.actions || {};
+    const regions = cfg.regions || {};
+    const info = {
+      actions: {
+        count_people: !!actions.count_people,
+        detect_climb: !!actions.detect_climb,
+        detect_fire: !!actions.detect_fire,
+      },
+      has_polygons: {
+        people: !!(regions.people && regions.people[0] && regions.people[0].points && regions.people[0].points.length),
+        climb: !!(regions.climb && regions.climb[0] && regions.climb[0].points && regions.climb[0].points.length),
+        fire: !!(regions.fire && regions.fire[0] && regions.fire[0].points && regions.fire[0].points.length),
+      },
+      raw_ai_config: cfg,
+    };
+    configInfoEl.textContent = pretty(info);
+  }
+
+  cameraSelect.addEventListener("change", () => {
+    const code = cameraSelect.value;
+    selectedCamera = cameras.find(c => c.code === code) || null;
+    refreshConfigInfo();
+    clearOverlay();
+    resetResultStatus();
+  });
+
+  function clearOverlay() {
+    overlay.width = overlay.width; // reset canvas
+  }
+
+  function resizeOverlay() {
+    if (!previewImg.src) {
+      overlay.width = 0;
+      overlay.height = 0;
+      return;
+    }
+    const imgRect = previewImg.getBoundingClientRect();
+    const wrapperRect = previewImg.parentElement.getBoundingClientRect();
+
+    const w = imgRect.width;
+    const h = imgRect.height;
+    if (w <= 0 || h <= 0) return;
+
+    overlay.width = w;
+    overlay.height = h;
+    overlay.style.width = w + "px";
+    overlay.style.height = h + "px";
+
+    const offsetX = imgRect.left - wrapperRect.left;
+    const offsetY = imgRect.top - wrapperRect.top;
+    overlay.style.left = offsetX + "px";
+    overlay.style.top = offsetY + "px";
+
+    if (lastDetectData) {
+      drawOverlays(lastDetectData);
+    }
+  }
+
+  function drawPolygon(points, colorStroke, colorFill, labelText) {
+    if (!points || !points.length) return;
+    const w = overlay.width;
+    const h = overlay.height;
+    if (!w || !h) return;
+
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = colorStroke;
+    ctx.fillStyle = colorFill;
+
+    ctx.beginPath();
+    points.forEach((p, idx) => {
+      const x = Number(p.x) * w;
+      const y = Number(p.y) * h;
+      if (idx === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Handles
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = colorStroke;
+    points.forEach(p => {
+      const x = Number(p.x) * w;
+      const y = Number(p.y) * h;
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    });
+
+    // Label (centroid)
+    if (labelText) {
+      let sx = 0, sy = 0;
+      points.forEach(p => {
+        sx += Number(p.x);
+        sy += Number(p.y);
+      });
+      const cx = (sx / points.length) * w;
+      const cy = (sy / points.length) * h;
+
+      const padX = 4;
+      ctx.font = "11px system-ui, sans-serif";
+      const textWidth = ctx.measureText(labelText).width;
+
+      ctx.fillStyle = "rgba(15,23,42,0.9)";
+      ctx.beginPath();
+      ctx.roundRect(cx - textWidth / 2 - padX, cy - 14, textWidth + padX * 2, 16, 4);
+      ctx.fill();
+
+      ctx.fillStyle = "#e5e7eb";
+      ctx.fillText(labelText, cx - textWidth / 2, cy - 2);
+    }
+
+    ctx.restore();
+  }
+
+  function drawBox(box, colorStroke, labelText, imgSize) {
+    if (!box || !imgSize) return;
+    const w = overlay.width;
+    const h = overlay.height;
+    if (!w || !h) return;
+
+    const sx = w / imgSize.width;
+    const sy = h / imgSize.height;
+
+    const x1 = box.left * sx;
+    const y1 = box.top * sy;
+    const x2 = box.right * sx;
+    const y2 = box.bottom * sy;
+
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = colorStroke;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+    if (labelText) {
+      const padX = 4;
+      ctx.font = "11px system-ui, sans-serif";
+      const textWidth = ctx.measureText(labelText).width;
+
+      ctx.setLineDash([]);
+      ctx.fillStyle = colorStroke;
+      ctx.beginPath();
+      ctx.roundRect(x1, y1 - 16, textWidth + padX * 2, 16, 4);
+      ctx.fill();
+
+      ctx.fillStyle = "#0b1120";
+      ctx.fillText(labelText, x1 + padX, y1 - 3);
+    }
+
+    ctx.restore();
+  }
+
+  function drawOverlays(data) {
+    clearOverlay();
+    if (!data || !data.image_size) return;
+
+    const imgSize = data.image_size;
+    const polys = data.polygons || {};
+    const results = data.results || {};
+
+    // People polygon + box
+    if (polys.people && polys.people.length) {
+      drawPolygon(polys.people, "rgba(59,130,246,0.95)", "rgba(59,130,246,0.25)", "PEOPLE");
+    }
+    if (results.count_people && results.count_people.crop_box) {
+      drawBox(results.count_people.crop_box, "rgba(59,130,246,0.95)", "PEOPLE BOX", imgSize);
+    }
+
+    // Climb polygon + box
+    if (polys.climb && polys.climb.length) {
+      drawPolygon(polys.climb, "rgba(34,197,94,0.95)", "rgba(34,197,94,0.25)", "CLIMB");
+    }
+    if (results.detect_climb && results.detect_climb.crop_box) {
+      drawBox(results.detect_climb.crop_box, "rgba(34,197,94,0.95)", "CLIMB BOX", imgSize);
+    }
+
+    // Fire polygon + box
+    if (polys.fire && polys.fire.length) {
+      drawPolygon(polys.fire, "rgba(239,68,68,0.95)", "rgba(239,68,68,0.25)", "FIRE");
+    }
+    if (results.detect_fire && results.detect_fire.crop_box) {
+      drawBox(results.detect_fire.crop_box, "rgba(239,68,68,0.95)", "FIRE BOX", imgSize);
+    }
+  }
+
+  function resetResultStatus() {
+    pillPeople.className = "ai-pill disabled";
+    peopleCountEl.textContent = "-";
+
+    pillCrowd.className = "ai-pill disabled";
+    crowdStatusTextEl.textContent = "OFF";
+
+    pillFire.className = "ai-pill disabled";
+    fireStatusTextEl.textContent = "OFF";
+
+    pillClimb.className = "ai-pill disabled";
+    climbStatusTextEl.textContent = "OFF";
+  }
+
+  function updateResultStatus(data) {
+    resetResultStatus();
+    if (!data || !data.results) return;
+
+    const res = data.results;
+
+    // People count + Crowd
+    if (res.count_people && res.count_people.ok && res.count_people.parsed) {
+      const parsed = res.count_people.parsed;
+      const pc = Number(parsed.people_count);
+      const maxAllowed = Number(parsed.max_allowed ?? 0);
+      const isOver = !!parsed.is_over_limit;
+
+      if (Number.isFinite(pc)) {
+        pillPeople.className = "ai-pill people-active";
+        if (maxAllowed > 0) {
+          // Hiển thị dạng "current / max"
+          peopleCountEl.textContent = `${pc}/${maxAllowed}`;
+        } else {
+          peopleCountEl.textContent = String(pc);
+        }
+      }
+
+      if (maxAllowed > 0) {
+        if (isOver) {
+          pillCrowd.className = "ai-pill crowd-active";
+          crowdStatusTextEl.textContent = "ON";
+        } else {
+          pillCrowd.className = "ai-pill disabled";
+          crowdStatusTextEl.textContent = "OFF";
+        }
+      } else {
+        // Không đặt max => crowd không có ý nghĩa
+        pillCrowd.className = "ai-pill disabled";
+        crowdStatusTextEl.textContent = "OFF";
+      }
+    }
+
+    // Fire
+    if (res.detect_fire && res.detect_fire.ok && res.detect_fire.parsed) {
+      const hasFire = !!res.detect_fire.parsed.has_fire;
+      if (hasFire) {
+        pillFire.className = "ai-pill fire-active";
+        fireStatusTextEl.textContent = "ON";
+      } else {
+        pillFire.className = "ai-pill disabled";
+        fireStatusTextEl.textContent = "OFF";
+      }
+    }
+
+    // Climb
+    if (res.detect_climb && res.detect_climb.ok && res.detect_climb.parsed) {
+      const hasClimb = !!res.detect_climb.parsed.has_climbing;
+      if (hasClimb) {
+        pillClimb.className = "ai-pill climb-active";
+        climbStatusTextEl.textContent = "ON";
+      } else {
+        pillClimb.className = "ai-pill disabled";
+        climbStatusTextEl.textContent = "OFF";
+      }
+    }
+  }
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    lastDetectData = null;
+    clearOverlay();
+    resetResultStatus();
+    if (!file) {
+      previewImg.src = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImg.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  previewImg.addEventListener("load", () => {
+    resizeOverlay();
+  });
+
+  window.addEventListener("resize", () => {
+    resizeOverlay();
+  });
+
+  btnDetect.addEventListener("click", async () => {
+    if (!selectedCamera) {
+      setStatus("Please select a camera first.", "error");
+      return;
+    }
+    const file = fileInput.files[0];
+    if (!file) {
+      setStatus("Please choose an image to test.", "error");
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append("camera_code", selectedCamera.code);
+    fd.append("file", file);
+
+    try {
+      setStatus("Running detect...", "info");
+      resultJsonEl.textContent = "{}";
+      clearOverlay();
+      lastDetectData = null;
+      resetResultStatus();
+
+      const res = await fetch(API_DETECT, {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      resultJsonEl.textContent = pretty(data);
+      lastDetectData = data;
+      resizeOverlay(); // will call drawOverlays again
+      updateResultStatus(data);
+      setStatus("Detect done.", "success");
+    } catch (err) {
+      console.error(err);
+      setStatus("Detect failed: " + err.message, "error");
+    }
+  });
+
+  // init
+  (function init() {
+    loadCameras();
+    configInfoEl.textContent = "// select a camera to view AI config";
+    resetResultStatus();
+  })();
+</script>
+</body>
+</html>

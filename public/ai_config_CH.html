@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>CCTV AI Config CH-Pub v1.0.2</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        .layout {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            border-right: 1px solid #e5e7eb;
+            background: #ffffff;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 14px;
+            gap: 10px;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0 0 8px;
+        }
+
+        label {
+            font-size: 13px;
+            display: block;
+            margin-bottom: 4px;
+            color: #4b5563;
+        }
+
+        select,
+        input[type="number"] {
+            width: 100%;
+            font-size: 13px;
+            padding: 5px 8px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            outline: none;
+        }
+
+        select:focus,
+        input[type="number"]:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+        }
+
+        /* NEW: search input */
+        .search-input {
+            width: 100%;
+            font-size: 13px;
+            padding: 5px 8px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            outline: none;
+            margin-bottom: 6px;
+        }
+
+        .search-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #6b7280;
+            margin-top: 6px;
+        }
+
+        .switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 4px 0;
+            font-size: 13px;
+        }
+
+        .switch {
+            position: relative;
+            width: 34px;
+            height: 18px;
+            border-radius: 999px;
+            background: #e5e7eb;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            transition: transform 0.15s;
+            z-index: 1;
+            /* NEW: luôn nổi trên nền */
+        }
+
+        .switch input:checked+.switch-thumb {
+            transform: translateX(16px);
+        }
+
+        .switch-bg {
+            position: absolute;
+            inset: 0;
+            border-radius: 999px;
+            background: #e5e7eb;
+            z-index: 0;
+            /* NEW: không còn -1 để khỏi bị mất màu */
+            transition: background 0.15s;
+        }
+
+        /* NEW: màu riêng cho từng switch khi bật */
+        .switch-people input:checked~.switch-bg {
+            background: #22c55e;
+            /* green */
+        }
+
+        .switch-climb input:checked~.switch-bg {
+            background: #f97316;
+            /* orange */
+        }
+
+        .switch-fire input:checked~.switch-bg {
+            background: #ef4444;
+            /* red */
+        }
+
+        .switch-phone input:checked~.switch-bg {
+            background: #8b5cf6;
+            /* purple */
+        }
+
+        .switch-off-hours input:checked~.switch-bg {
+            background: #3b82f6;
+            /* blue */
+        }
+
+        .btn {
+            border: none;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: #111827;
+            color: #f9fafb;
+        }
+
+        .btn-primary:hover {
+            background: #1f2937;
+        }
+
+        .btn-subtle {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .btn-subtle:hover {
+            background: #d1d5db;
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .btn-danger:hover {
+            background: #fecaca;
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .top-bar-left {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .status-line {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .status-error {
+            color: #b91c1c;
+        }
+
+        .status-success {
+            color: #15803d;
+        }
+
+        .image-wrapper {
+            position: relative;
+            flex: 1;
+            background: #111827;
+            border-radius: 10px;
+            overflow: auto;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            min-height: 280px;
+        }
+
+        #snapshot {
+            display: block;
+            /* Allow natural size, parent wrapper will scroll */
+            max-width: none;
+            height: auto;
+        }
+
+        #canvas-container {
+            position: relative;
+            display: inline-block;
+            line-height: 0;
+            background: #000;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: auto;
+            cursor: crosshair;
+            display: block;
+        }
+
+        .radio-group {
+            display: inline-flex;
+            border-radius: 999px;
+            border: 1px solid #d1d5db;
+            overflow: hidden;
+            background: #f3f4f6;
+            font-size: 11px;
+        }
+
+        .radio-option {
+            padding: 4px 10px;
+            cursor: pointer;
+            border-right: 1px solid #d1d5db;
+        }
+
+        .radio-option:last-child {
+            border-right: none;
+        }
+
+        .radio-option.active {
+            background: #111827;
+            color: #f9fafb;
+        }
+
+        .json-box {
+            font-family: "JetBrains Mono", "Fira Code", monospace;
+            font-size: 11px;
+            background: #111827;
+            color: #e5e7eb;
+            padding: 8px;
+            border-radius: 8px;
+            max-height: 160px;
+            overflow: auto;
+            white-space: pre;
+        }
+
+        .json-title {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #4b5563;
+        }
+
+        .footer {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <h1>CCTV AI Config</h1>
+
+            <div>
+                <label for="cameraSelect">Camera (capture = snapshot)</label>
+                <!-- NEW: ô search camera -->
+                <input type="text" id="cameraSearch" class="search-input"
+                    placeholder="Search by code / IP / location..." />
+                <select id="cameraSelect">
+                    <option value="">-- Select camera --</option>
+                </select>
+            </div>
+
+            <div>
+                <div class="section-title">AI Actions</div>
+
+                <div class="switch-row">
+                    <span>Count people</span>
+                    <label class="switch switch-people">
+                        <input type="checkbox" id="chkPeople">
+                        <span class="switch-thumb"></span>
+                        <span class="switch-bg"></span>
+                    </label>
+                </div>
+
+                <div class="switch-row">
+                    <span>Detect climbing</span>
+                    <label class="switch switch-climb">
+                        <input type="checkbox" id="chkClimb">
+                        <span class="switch-thumb"></span>
+                        <span class="switch-bg"></span>
+                    </label>
+                </div>
+
+                <div class="switch-row">
+                    <span>Detect fire</span>
+                    <label class="switch switch-fire">
+                        <input type="checkbox" id="chkFire">
+                        <span class="switch-thumb"></span>
+                        <span class="switch-bg"></span>
+                    </label>
+                </div>
+
+                <div class="switch-row">
+                    <span>Detect phone</span>
+                    <label class="switch switch-phone">
+                        <input type="checkbox" id="chkPhone">
+                        <span class="switch-thumb"></span>
+                        <span class="switch-bg"></span>
+                    </label>
+                </div>
+
+                <div class="switch-row">
+                    <span>Detect off-hours</span>
+                    <label class="switch switch-off-hours">
+                        <input type="checkbox" id="chkOffHours">
+                        <span class="switch-thumb"></span>
+                        <span class="switch-bg"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <div class="section-title">Working Hours</div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="flex: 1;">
+                        <label for="hoursStartInput">Start</label>
+                        <input type="time" id="hoursStartInput" value="07:15">
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="hoursEndInput">End</label>
+                        <input type="time" id="hoursEndInput" value="16:45">
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="section-title">Interval</div>
+                <label for="intervalInput">Seconds per frame</label>
+                <input type="number" id="intervalInput" value="30" min="5" step="1">
+            </div>
+
+            <!-- NEW: Count people settings -->
+            <div>
+                <div class="section-title">Count people settings</div>
+                <label for="maxPeopleInput">Max people in region (0 = no limit)</label>
+                <input type="number" id="maxPeopleInput" value="0" min="0" step="1">
+            </div>
+
+            <div>
+                <div class="section-title">Polygon Tools</div>
+                <div class="radio-group" id="polyTypeGroup">
+                    <div class="radio-option active" data-type="people">People region</div>
+                    <div class="radio-option" data-type="climb">Climb region</div>
+                    <div class="radio-option" data-type="fire">Fire region</div>
+                </div>
+
+                <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:6px;">
+                    <button class="btn btn-subtle btn-small" id="btnFinishPoly">✓ Finish polygon</button>
+                    <button class="btn btn-danger btn-small" id="btnClearPoly">✕ Clear polygon</button>
+                    <button class="btn btn-subtle btn-small" id="btnReloadSnap">⟳ Reload snapshot</button>
+                </div>
+
+                <p id="drawStatus" class="status-line">
+                    Select a camera & click on the image to add polygon points.
+                </p>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <span id="camLabel">No camera selected</span>
+                </div>
+                <div>
+                    <button class="btn btn-primary" id="btnSave">💾 Save config</button>
+                </div>
+            </div>
+
+            <div class="status-line" id="statusMsg"></div>
+
+            <div class="image-wrapper">
+                <div id="canvas-container">
+                    <img id="snapshot" src="" alt="Snapshot">
+                    <canvas id="overlay"></canvas>
+                </div>
+            </div>
+
+            <!-- <div class="footer">
+                <div style="flex:1;">
+                    <div class="json-title">Current regions JSON</div>
+                    <div id="regionsJson" class="json-box">{}</div>
+                </div>
+                <div style="width:210px;">
+                    <div class="json-title">Hint</div>
+                    <div class="status-line">
+                        - Count people: can use polygon region.<br>
+                        - Climb / Fire: draw polygon region.<br>
+                        - Saved into column <b>ai_config</b>.
+                    </div>
+                </div>
+            </div> -->
+        </main>
+    </div>
+
+    <script>
+        // API URLs
+        const urlParams = new URLSearchParams(window.location.search);
+        const apiBaseParam = urlParams.get('api_base');
+        const API_BASE_AUTO = apiBaseParam || (window.location.origin + "/api/cctv");
+
+        const API_LIST = API_BASE_AUTO + "/ai/cameras";
+        const API_SAVE = API_BASE_AUTO + "/ai/config";
+        const API_PROXY_SNAPSHOT = API_BASE_AUTO.replace("/ai", "") + "/proxy/snapshot";
+
+        const cameraSelect = document.getElementById("cameraSelect");
+        const cameraSearch = document.getElementById("cameraSearch"); // NEW
+        const snapshotImg = document.getElementById("snapshot");
+        const overlay = document.getElementById("overlay");
+        const statusMsg = document.getElementById("statusMsg");
+        const drawStatus = document.getElementById("drawStatus");
+        const camLabel = document.getElementById("camLabel");
+        // const regionsJsonEl = document.getElementById("regionsJson");
+
+        const chkPeople = document.getElementById("chkPeople");
+        const chkClimb = document.getElementById("chkClimb");
+        const chkFire = document.getElementById("chkFire");
+        const chkPhone = document.getElementById("chkPhone");
+        const chkOffHours = document.getElementById("chkOffHours");
+        const intervalInput = document.getElementById("intervalInput");
+        const maxPeopleInput = document.getElementById("maxPeopleInput");
+        const hoursStartInput = document.getElementById("hoursStartInput");
+        const hoursEndInput = document.getElementById("hoursEndInput");
+
+        const polyTypeGroup = document.getElementById("polyTypeGroup");
+        const btnFinishPoly = document.getElementById("btnFinishPoly");
+        const btnClearPoly = document.getElementById("btnClearPoly");
+        const btnReloadSnap = document.getElementById("btnReloadSnap");
+        const btnSave = document.getElementById("btnSave");
+
+        let ctx = overlay.getContext("2d");
+
+        let cameras = [];
+        let selectedCamera = null;
+
+        // NOW: support regions.people
+        let regions = { people: [], climb: [], fire: [] };
+        let closed = { people: false, climb: false, fire: false };
+        let currentType = "people";
+
+        function setStatus(text, type = "info") {
+            statusMsg.textContent = text || "";
+            statusMsg.className = "status-line";
+            if (type === "error") statusMsg.classList.add("status-error");
+            if (type === "success") statusMsg.classList.add("status-success");
+        }
+
+        function setDrawStatus(text) {
+            drawStatus.textContent = text;
+        }
+
+        function getProxySnapshotUrl(cam) {
+            if (!cam || !cam.ip) return "";
+            return API_PROXY_SNAPSHOT + "?ip=" + encodeURIComponent(cam.ip) + "&_=" + Date.now();
+        }
+
+        // NEW: render options theo search
+        function renderCameraOptions() {
+            const term = (cameraSearch.value || "").trim().toLowerCase();
+
+            cameraSelect.innerHTML = '<option value="">-- Select camera --</option>';
+
+            cameras
+                .filter((cam) => {
+                    if (!term) return true;
+                    const code = (cam.code || "").toLowerCase();
+                    const ip = (cam.ip || "").toLowerCase();
+                    const loc =
+                        (cam.location_name ||
+                            cam.location ||
+                            (cam.location_json && Object.values(cam.location_json).join(" ")) ||
+                            ""
+                        ).toLowerCase();
+
+                    return (
+                        code.includes(term) ||
+                        ip.includes(term) ||
+                        loc.includes(term)
+                    );
+                })
+                .forEach((cam) => {
+                    const opt = document.createElement("option");
+                    opt.value = cam.code;
+                    opt.textContent = cam.code + (cam.ip ? " (" + cam.ip + ")" : "");
+                    cameraSelect.appendChild(opt);
+                });
+        }
+
+        async function loadCameras() {
+            try {
+                setStatus("Loading cameras...");
+                const res = await fetch(API_LIST);
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                const data = await res.json();
+                if (data.ret_code !== 0 || !Array.isArray(data.data)) {
+                    throw new Error("Invalid response");
+                }
+                cameras = data.data;
+                renderCameraOptions();
+                setStatus("Loaded " + cameras.length + " cameras.");
+
+                // Auto select if param exists
+                const cameraCodeParam = urlParams.get('camera_code');
+                if (cameraCodeParam) {
+                    cameraSelect.value = cameraCodeParam;
+                    onCameraChange();
+                }
+            } catch (err) {
+                console.error(err);
+                setStatus("Failed to load cameras: " + err.message, "error");
+            }
+        }
+
+        async function saveConfig() {
+            if (!selectedCamera) {
+                setStatus("No camera selected.", "error");
+                return;
+            }
+            const payload = {
+                code: selectedCamera.code,
+                ai_config: {
+                    actions: {
+                        count_people: chkPeople.checked,
+                        detect_climb: chkClimb.checked,
+                        detect_fire: chkFire.checked,
+                        detect_phone: chkPhone.checked,
+                        detect_off_hours: chkOffHours.checked,
+                    },
+                    interval_seconds: Number(intervalInput.value) || 30,
+                    max_people_allowed: Number(maxPeopleInput.value) || 0, // 0 = no limit
+                    working_hours_start: hoursStartInput.value || "07:15",
+                    working_hours_end: hoursEndInput.value || "16:45",
+                    regions: {
+                        people: regions.people.length ? [{ id: "people_zone_1", points: regions.people }] : [],
+                        climb: regions.climb.length ? [{ id: "climb_zone_1", points: regions.climb }] : [],
+                        fire: regions.fire.length ? [{ id: "fire_zone_1", points: regions.fire }] : [],
+                    },
+                }
+            };
+
+            try {
+                setStatus("Saving config...");
+                const res = await fetch(API_SAVE, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                const data = await res.json();
+                if (data.ret_code !== 0) throw new Error(data.msg || "Save failed");
+                setStatus("Saved config for " + selectedCamera.code, "success");
+            } catch (err) {
+                console.error(err);
+                setStatus("Save failed: " + err.message, "error");
+            }
+        }
+
+        function onCameraChange() {
+            const code = cameraSelect.value;
+            selectedCamera = cameras.find((c) => c.code === code) || null;
+
+            regions = { people: [], climb: [], fire: [] };
+            closed = { people: false, climb: false, fire: false };
+            updateRegionsJson();
+            drawAll();
+
+            if (!selectedCamera) {
+                camLabel.textContent = "No camera selected";
+                snapshotImg.src = "";
+                return;
+            }
+
+            camLabel.textContent = "Camera " + selectedCamera.code;
+
+            if (!selectedCamera.ip) {
+                snapshotImg.src = "";
+                setStatus("Camera has no IP.", "error");
+            } else {
+                // Reset ảnh cũ ngay lập tức để tránh nhầm lẫn
+                snapshotImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+                setStatus("Loading snapshot...");
+
+                const snapUrl = getProxySnapshotUrl(selectedCamera);
+                snapshotImg.src = snapUrl;
+            }
+
+            chkPeople.checked = false;
+            chkClimb.checked = false;
+            chkFire.checked = false;
+            chkPhone.checked = false;
+            chkOffHours.checked = false;
+            intervalInput.value = 30;
+            maxPeopleInput.value = 0;
+            hoursStartInput.value = "07:15";
+            hoursEndInput.value = "16:45";
+
+            if (selectedCamera.ai_config) {
+                try {
+                    const cfg =
+                        typeof selectedCamera.ai_config === "string"
+                            ? JSON.parse(selectedCamera.ai_config)
+                            : selectedCamera.ai_config;
+
+                    const acts = cfg.actions || {};
+                    chkPeople.checked = !!acts.count_people;
+                    chkClimb.checked = !!acts.detect_climb;
+                    chkFire.checked = !!acts.detect_fire;
+                    chkPhone.checked = !!acts.detect_phone;
+                    chkOffHours.checked = !!acts.detect_off_hours;
+
+                    if (cfg.interval_seconds)
+                        intervalInput.value = cfg.interval_seconds;
+
+                    if (typeof cfg.max_people_allowed !== "undefined" && cfg.max_people_allowed !== null) {
+                        maxPeopleInput.value = cfg.max_people_allowed;
+                    }
+
+                    if (cfg.working_hours_start) hoursStartInput.value = cfg.working_hours_start;
+                    if (cfg.working_hours_end) hoursEndInput.value = cfg.working_hours_end;
+
+                    const reg = cfg.regions || {};
+
+                    if (reg.people && reg.people[0] && reg.people[0].points) {
+                        regions.people = reg.people[0].points.map((p) => ({
+                            x: Number(p.x),
+                            y: Number(p.y),
+                        }));
+                        closed.people = regions.people.length >= 3;
+                    }
+
+                    if (reg.climb && reg.climb[0] && reg.climb[0].points) {
+                        regions.climb = reg.climb[0].points.map((p) => ({
+                            x: Number(p.x),
+                            y: Number(p.y),
+                        }));
+                        closed.climb = regions.climb.length >= 3;
+                    }
+                    if (reg.fire && reg.fire[0] && reg.fire[0].points) {
+                        regions.fire = reg.fire[0].points.map((p) => ({
+                            x: Number(p.x),
+                            y: Number(p.y),
+                        }));
+                        closed.fire = regions.fire.length >= 3;
+                    }
+                } catch (err) {
+                    console.warn("parse ai_config error", err);
+                }
+            }
+
+            updateRegionsJson();
+            drawAll();
+        }
+
+        cameraSelect.addEventListener("change", onCameraChange);
+
+        // NEW: search realtime
+        cameraSearch.addEventListener("input", () => {
+            renderCameraOptions();
+            // nếu camera hiện tại không còn trong list sau khi filter thì reset view
+            if (!cameras.find(c => c.code === cameraSelect.value)) {
+                onCameraChange();
+            }
+        });
+
+        function setCurrentType(t) {
+            currentType = t;
+            for (const o of polyTypeGroup.querySelectorAll(".radio-option")) {
+                o.classList.toggle("active", o.dataset.type === t);
+            }
+            setDrawStatus("Drawing polygon for: " + t.toUpperCase() + ". Click image to add points.");
+        }
+
+        polyTypeGroup.addEventListener("click", (e) => {
+            const opt = e.target.closest(".radio-option");
+            if (!opt) return;
+            setCurrentType(opt.dataset.type);
+        });
+
+        const canvasContainer = document.getElementById("canvas-container");
+
+        function resizeCanvas() {
+            // Dùng naturalWidth/Height nếu image chưa hiển thị đủ, nhưng thực tế offsetWidth/Height của img là chuẩn nhất
+            const w = snapshotImg.offsetWidth;
+            const h = snapshotImg.offsetHeight;
+
+            if (w <= 0 || h <= 0) return;
+
+            overlay.width = w;
+            overlay.height = h;
+
+            overlay.style.width = w + "px";
+            overlay.style.height = h + "px";
+
+            drawAll();
+        }
+
+        // Tự động cập nhật khi ảnh thay đổi kích thước
+        const resizeObs = new ResizeObserver(() => {
+            resizeCanvas();
+        });
+        resizeObs.observe(snapshotImg);
+
+        snapshotImg.addEventListener("load", () => {
+            setStatus(""); // Clear loading status
+            resizeCanvas();
+        });
+
+        snapshotImg.onerror = () => {
+            snapshotImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+            setStatus("Failed to load snapshot for " + (selectedCamera ? selectedCamera.code : "camera"), "error");
+            // Xóa canvas nếu lỗi
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            ctx.fillStyle = "#111827";
+            ctx.fillRect(0, 0, overlay.width, overlay.height);
+            ctx.fillStyle = "#ef4444";
+            ctx.font = "14px sans-serif";
+            ctx.fillText("IMAGE LOAD ERROR", 20, 40);
+        };
+
+        overlay.addEventListener("click", (e) => {
+            if (!selectedCamera) return;
+
+            // Sử dụng offsetX, offsetY để lấy tọa độ tương đối với canvas/container một cách chuẩn xác nhất
+            const xPix = e.offsetX;
+            const yPix = e.offsetY;
+
+            const w = overlay.width;
+            const h = overlay.height;
+
+            if (w <= 0 || h <= 0) return;
+
+            const nx = xPix / w;
+            const ny = yPix / h;
+
+            regions[currentType].push({ x: nx, y: ny });
+            closed[currentType] = false;
+
+            // Vẽ ngay một chấm để phản hồi trực quan
+            drawDot(xPix, yPix, "rgba(255, 255, 255, 0.8)");
+
+            drawAll();
+            updateRegionsJson();
+        });
+
+        function drawDot(x, y, color) {
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        btnFinishPoly.addEventListener("click", () => {
+            if (regions[currentType].length < 3) {
+                setStatus("Polygon requires at least 3 points.", "error");
+                return;
+            }
+            closed[currentType] = true;
+            setStatus("Closed polygon for " + currentType, "success");
+            drawAll();
+        });
+
+        btnClearPoly.addEventListener("click", () => {
+            regions[currentType] = [];
+            closed[currentType] = false;
+            drawAll();
+            updateRegionsJson();
+        });
+
+        btnReloadSnap.addEventListener("click", () => {
+            if (!selectedCamera || !selectedCamera.ip) return;
+            snapshotImg.src = getProxySnapshotUrl(selectedCamera);
+        });
+
+        function drawAll() {
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            // People region (green)
+            drawRegion(regions.people, closed.people, "rgba(34,197,94,0.30)", "rgba(22,163,74,0.95)");
+            // Climb region (orange)
+            drawRegion(regions.climb, closed.climb, "rgba(249,115,22,0.35)", "rgba(194,65,12,0.95)");
+            // Fire region (red)
+            drawRegion(regions.fire, closed.fire, "rgba(239,68,68,0.30)", "rgba(185,28,28,0.95)");
+        }
+
+        function drawRegion(points, isClosed, fillStyle, strokeStyle) {
+            if (!points || points.length === 0) return;
+            const w = overlay.width;
+            const h = overlay.height;
+
+            ctx.save();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = strokeStyle;
+            ctx.fillStyle = fillStyle;
+
+            ctx.beginPath();
+            points.forEach((p, idx) => {
+                const x = p.x * w;
+                const y = p.y * h;
+                if (idx === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            if (isClosed && points.length >= 3) {
+                ctx.closePath();
+                ctx.fill();
+            }
+            ctx.stroke();
+
+            ctx.fillStyle = "#ffffff";
+            points.forEach(p => {
+                const x = p.x * w;
+                const y = p.y * h;
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            ctx.restore();
+        }
+
+        function updateRegionsJson() {
+            const payload = {
+                regions: {
+                    people: regions.people.length
+                        ? [{ id: "people_zone_1", points: regions.people }]
+                        : [],
+                    climb: regions.climb.length
+                        ? [{ id: "climb_zone_1", points: regions.climb }]
+                        : [],
+                    fire: regions.fire.length
+                        ? [{ id: "fire_zone_1", points: regions.fire }]
+                        : [],
+                },
+            };
+            // regionsJsonEl.textContent = JSON.stringify(payload, null, 2);
+        }
+
+        btnSave.addEventListener("click", saveConfig);
+
+        (function init() {
+            setCurrentType("people");
+            loadCameras();
+        })();
+    </script>
+</body>
+
+</html>
